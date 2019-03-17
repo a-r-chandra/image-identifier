@@ -30,32 +30,27 @@ namespace ImageProcessing
 
         public static bool AreSameImages(Bitmap image1, Bitmap image2) {
 
-            var img1W = image1.Width;
-            var img1H = image1.Height;
-
-            var img2W = image2.Width;
-            var img2H = image2.Height;
-
-            if (img1H > img2H && img1W > img2W) {
-                image1 = ResizeImage(image1, img2W, img2H);
-            }else if (img1H < img2H && img1W < img2W) {
-                image2 = ResizeImage(image2, img1W, img1H);
+            if (image1.Width > image2.Width && image1.Height > image2.Height) {
+                image1 = ResizeImage(image1, image2.Width, image2.Height);
+            }else if (image1.Width < image2.Width && image1.Height < image2.Height)
+            {
+                image2 = ResizeImage(image2, image1.Width, image1.Height);
             }
 
             var same = true;
+            var counter = 0;
 
-            for (var i = 0; i < image1.Width/4; i++)
+            for (var i = 0; i < image1.Width / 4; i++)
             {
-                for (var j = 0; j < image1.Height/4; j++)
+                for (var j = 0; j < image1.Height / 4; j++)
                 {
-                    var img1Pixel = image1.GetPixel(i, j);
-                    var img2Pixel = image2.GetPixel(i, j);
-
-                    if (img1Pixel.GetHashCode() != img2Pixel.GetHashCode())
+                    if (image1.GetPixel(i, j).GetHashCode() != image2.GetPixel(i, j).GetHashCode())
                     {
                         same = false;
                         break;
                     }
+
+                    counter++;
                 }
             }
 
@@ -68,6 +63,8 @@ namespace ImageProcessing
             {
                 Console.WriteLine("Not same");
             }
+
+            Console.WriteLine($"pixels checked {counter}");
                        
             return same;
         }
@@ -82,6 +79,8 @@ namespace ImageProcessing
 
         public static Bitmap ResizeImage(Image image, int width, int height)
         {
+            //init();
+
             var destRect = new Rectangle(0, 0, width, height);
             var destImage = new Bitmap(width, height);
 
@@ -89,10 +88,10 @@ namespace ImageProcessing
 
             using (var graphics = Graphics.FromImage(destImage))
             {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                //graphics.CompositingMode = CompositingMode.SourceCopy;
+                //graphics.CompositingQuality = CompositingQuality.HighQuality;
                 graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                //graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
                 using (var wrapMode = new ImageAttributes())
@@ -101,6 +100,8 @@ namespace ImageProcessing
                     graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
                 }
             }
+
+            //end();
 
             return destImage;
         }
@@ -141,7 +142,6 @@ namespace ImageProcessing
         {
             _timer.Stop();
             Console.WriteLine($"{_timer.ElapsedMilliseconds}ms {(Process.GetCurrentProcess().VirtualMemorySize64 - _initMemory) / 1024}kb");
-            Console.ReadLine();
         }
     }
 }

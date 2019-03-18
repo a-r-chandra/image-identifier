@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace ImageProcessing
 {
@@ -12,50 +13,63 @@ namespace ImageProcessing
         private static Stopwatch _timer = new Stopwatch();
         private static long _initMemory;
         private const int scaleFactor = 10;
+
+        private static string _baseDir = "";
         static void Main(string[] args)
         {
             init();
 
-            //var img1 = new Bitmap(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\sample_a.tif");
-
-            //var img2 = new Bitmap(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\sample_a_resized.tif");
+            //DoBulkResize("srcimages_large", "destimages");
 
 
-            //var img1 = new Bitmap(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\srcimages\christoph-rucker-1434547-unsplash.jpg");
+            var img1 = new Bitmap(@"C:\Users\archa\Documents\Projects\image-identifier\ImageProcessing\srcimages_large\anita-austvika-1426774-unsplash.jpg");
 
-            //var img2 = new Bitmap(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\destimages\christoph-rucker-1434547-unsplash_resized.jpg");
-
-            var img1 = new Bitmap(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\srcimages\paul-carroll-1421371-unsplash.jpg");
-
-            var img2 = new Bitmap(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\destimages\paul-carroll-1421371-unsplash_resized.jpg");
-
+            var img2 = new Bitmap(@"C:\Users\archa\Documents\Projects\image-identifier\ImageProcessing\destimages\anita-austvika-1426774-unsplash-resized.jpg");
 
             AreSameImages1(img1, img2);
 
-
-
-            //SaveResizedImage3(img1, scaleFactor, @"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\destimages\sample_a_resized.tif");
-
-            //DoBulkResize(@"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\srcimages", @"C:\Users\archa\Documents\Projects\ImageProcessing\ImageProcessing\destimages");
 
 
             end();
             Console.ReadKey();
         }
 
-        public static void DoBulkResize(string srcDir, string dstDir) {
 
-            var files = Directory.EnumerateFiles(srcDir);
+        public static bool FixBaseDir(string dirName) {
+
+            string workingDirectory = Environment.CurrentDirectory;
+            // or: Directory.GetCurrentDirectory() gives the same result
+
+            // This will get the current PROJECT directory
+            string projectDirectory = Directory.GetParent(workingDirectory).Parent.FullName;
+
+            var dir = Directory.GetDirectories(projectDirectory).SingleOrDefault(s => s.Equals($"{projectDirectory}\\{dirName}"));
+
+            if (!string.IsNullOrEmpty(dir)) {
+                _baseDir = dir.Replace(dirName, "");
+                return true;
+            }
+            return false;
+        }
+
+        public static void DoBulkResize(string srcDir, string dstDir)
+        {
+
+            if (!Directory.Exists(srcDir))
+                FixBaseDir(srcDir);
+
+            if (!Directory.Exists($"{_baseDir}\\{dstDir}"))
+                Directory.CreateDirectory($"{_baseDir}\\{dstDir}");
+
+            var files = Directory.EnumerateFiles($"{_baseDir}\\{srcDir}");
 
             foreach (var file in files)
             {
 
                 SaveResizedImage1(new Bitmap(file), scaleFactor, 
-                    $"{dstDir}\\{Path.GetFileNameWithoutExtension(file)}-resized{Path.GetExtension(file)}");
+                    $"{_baseDir}\\{dstDir}\\{Path.GetFileNameWithoutExtension(file)}-resized{Path.GetExtension(file)}");
 
             }
-
-
         }
                      
         //the method of resize matters. can change that but have to check timing

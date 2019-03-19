@@ -24,14 +24,12 @@ namespace ImageProcessing
         static void Main(string[] args)
         {
             init();
+            SetBaseDir("srcpasimages_5");
 
             //DoBulkResize("srcpasimages", "destpasimages");
-            
-            //var img1 = new Bitmap(@"C:\Users\rchandra\Desktop\image-identifier-master\ImageProcessing\srcpasimages_5\2019004861.tif");
-            //var img2 = new Bitmap(@"C:\Users\rchandra\Desktop\image-identifier-master\ImageProcessing\destpasimages_5\2019004861.tif");
-
-            var img1 = new Bitmap(@"C:\Users\rchandra\Desktop\image-identifier-master\ImageProcessing\srcpasimages_5\sample.tif");
-            var img2 = new Bitmap(@"C:\Users\rchandra\Desktop\image-identifier-master\ImageProcessing\destpasimages_5\sample-resized.tif");
+      
+            var img1 = new Bitmap($@"{_baseDir}\srcpasimages_5\sample.tif");
+            var img2 = new Bitmap($@"{_baseDir}\destpasimages_5\sample-resized.tif");
 
 
             AreSameImages1(img1, img2);
@@ -49,117 +47,57 @@ namespace ImageProcessing
         }
 
 
-        public static Dictionary<string,string> MatchIimages(string srcDir, string dstDir) {
-            var matchresults = new Dictionary<string, string>();
-
-            if (!Directory.Exists(srcDir))
-                FixBaseDir(srcDir);
-
-            if (!Directory.Exists($"{_baseDir}\\{srcDir}") || !Directory.Exists($"{_baseDir}\\{dstDir}")) {
-                Console.WriteLine("Invalid src or dest dirs");
-                return matchresults;
-            }
-
-            BuildLookup($"{_baseDir}\\{dstDir}");
-
-            var imagesToCheck = Directory.GetFiles($"{_baseDir}\\{srcDir}");
-
-            var imgCompTimer = new Stopwatch();
-            imgCompTimer.Start();
-
-            foreach (var imagefile in imagesToCheck) {
-
-                var image = new Bitmap(imagefile);
-
-                image = ResizeImage1(image, image.Width / _scaleFactor, image.Height / _scaleFactor);
-
-                var hash = new StringBuilder();
-
-                for (var i = 0; i < image.Width; i = i + image.Width / _skip)
-                {
-                    for (var j = 0; j < image.Height; j = j + image.Height / _skip)
-                    {
-                        hash.Append(image.GetPixel(i, j).GetHashCode());
-                    }
-                }
-
-                if (_lookup.ContainsKey(hash.ToString())) {
-                    matchresults.Add(imagefile, _lookup[hash.ToString()]);
-                }
-            }
-
-            imgCompTimer.Stop();
-            Console.WriteLine($"Matching took {imgCompTimer.ElapsedMilliseconds}ms");
-
-            return matchresults;
-        }
-
-        public static void BuildLookup(string imageLocation)
-        {
-            var imagesToCheckAgainst = Directory.GetFiles(imageLocation);
-
-            var imgCompTimer = new Stopwatch();
-            imgCompTimer.Start();
-
-            foreach (var imagefile in imagesToCheckAgainst){
-
-                var hash = new StringBuilder();
-
-                var image = new Bitmap(imagefile);
-
-                for (var i = 0; i < image.Width; i = i + image.Width / _skip)
-                {
-                    for (var j = 0; j < image.Height; j = j + image.Height / _skip)
-                    {
-                        hash.Append(image.GetPixel(i, j).GetHashCode());
-                    }
-                }
-
-                if (!_lookup.ContainsKey(hash.ToString()))
-                {
-                    _lookup.Add(hash.ToString(), imagefile);
-                }
-                else
-                {
-                    Console.WriteLine($"Possible duplicate image. {imagefile} seems similar to {_lookup[hash.ToString()]}");
-                }
-            }
-
-            imgCompTimer.Stop();
-            Console.WriteLine($"Lookup build took {imgCompTimer.ElapsedMilliseconds}ms");
-        }
+      
         
         //the method of resize matters. can change that but have to check timing
         public static bool AreSameImages1(Bitmap image1, Bitmap image2)
         {
             var img1StartXY = GetStartOfText(image1);
-            var img2StartXY = GetStartOfText(image2);
+            //var img2StartXY = GetStartOfText(image2);
 
-            //resize to text placement
-            image1 = ResizeImage1(image1, image1.Width - img1StartXY.Item1, image1.Height - img1StartXY.Item2,
-                img1StartXY.Item1, img1StartXY.Item2);
+            ////resize to text placement
+            image1 = ResizeImage1(image1, image1.Width, image1.Height, img1StartXY.Item1, img1StartXY.Item2);
 
-            image2 = ResizeImage1(image2, image2.Width - img2StartXY.Item1, image2.Height - img2StartXY.Item2,
-                img2StartXY.Item1, img2StartXY.Item2);
+            //image2 = ResizeImage1(image2, image2.Width - img2StartXY.Item1, image2.Height - img2StartXY.Item2,
+            //    img2StartXY.Item1, img2StartXY.Item2);
 
-            if (image1.Width > image2.Width || image1.Height > image2.Height) {
-                Console.WriteLine("Resizing to image2 's dimensions");
-                image1 = ResizeImage1(image1, image2.Width, image2.Height);
-            }
-            else if(image1.Width < image2.Width || image1.Height < image2.Height)
-            {
-                Console.WriteLine("Resizing to image1 's dimensions");
-                image2 = ResizeImage1(image2, image1.Width, image1.Height);
-            }
+            //if (image1.Width > image2.Width || image1.Height > image2.Height) {
+            //    Console.WriteLine("Resizing to image2 's dimensions");
+            //    image1 = ResizeImage1(image1, image2.Width, image2.Height);
+            //}
+            //else if(image1.Width < image2.Width || image1.Height < image2.Height)
+            //{
+            //    Console.WriteLine("Resizing to image1 's dimensions");
+            //    image2 = ResizeImage1(image2, image1.Width, image1.Height);
+            //}
 
             return AreSamePixels(image1, image2);
         }
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //lossless
         public static Bitmap ResizeImage1(Image image, int width, int height, int x=0, int y=0)
         {
             //init();
-            Console.WriteLine("Resizing");
+            Console.WriteLine($"Resizing from {image.Width}x{image.Height} to {width}x{height}");
 
             var destRect = new Rectangle(x, y, width, height);
             var destImage = new Bitmap(width, height);
@@ -168,23 +106,36 @@ namespace ImageProcessing
 
             using (var graphics = Graphics.FromImage(destImage))
             {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
+
+                                //graphics.CompositingMode = CompositingMode.SourceCopy;
+                //graphics.CompositingQuality = CompositingQuality.HighQuality;
                 graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                using (var wrapMode = new ImageAttributes())
-                {
-                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-                    graphics.DrawImage(image, destRect, x, y, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-                }
+                graphics.DrawImage(image, destRect);
+
+                //using (var wrapMode = new ImageAttributes())
+                //{
+                //    wrapMode.SetWrapMode(WrapMode.Clamp);
+                //    graphics.DrawImage(image, destRect, x, y, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
+                //}
             }
 
             //end();
 
+            if (File.Exists($@"{_baseDir}\destpasimages_5\sample-resized-2-a.tif")) {
+                File.Delete($@"{_baseDir}\destpasimages_5\sample-resized-2-a.tif");
+            }
+
+            destImage.Save($@"{_baseDir}\destpasimages_5\sample-resized-2-a.tif");
             return destImage;
         }
+
+
+
+
+
 
         public static Tuple<int, int> GetStartOfText(Bitmap image)
         {
@@ -214,6 +165,11 @@ namespace ImageProcessing
 
             return new Tuple<int, int>(0, 0);
         }
+
+
+
+
+
 
         public static bool AreSamePixels(Bitmap image1, Bitmap image2)
         {
@@ -292,6 +248,332 @@ namespace ImageProcessing
             return same;
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public static Dictionary<string, string> MatchIimages(string srcDir, string dstDir)
+        {
+            var matchresults = new Dictionary<string, string>();
+
+            if (!Directory.Exists(srcDir))
+                SetBaseDir(srcDir);
+
+            if (!Directory.Exists($"{_baseDir}\\{srcDir}") || !Directory.Exists($"{_baseDir}\\{dstDir}"))
+            {
+                Console.WriteLine("Invalid src or dest dirs");
+                return matchresults;
+            }
+
+            BuildLookup($"{_baseDir}\\{dstDir}");
+
+            var imagesToCheck = Directory.GetFiles($"{_baseDir}\\{srcDir}");
+
+            var imgCompTimer = new Stopwatch();
+            imgCompTimer.Start();
+
+            foreach (var imagefile in imagesToCheck)
+            {
+
+                var image = new Bitmap(imagefile);
+
+                image = ResizeImage1(image, image.Width / _scaleFactor, image.Height / _scaleFactor);
+
+                var hash = new StringBuilder();
+
+                for (var i = 0; i < image.Width; i = i + image.Width / _skip)
+                {
+                    for (var j = 0; j < image.Height; j = j + image.Height / _skip)
+                    {
+                        hash.Append(image.GetPixel(i, j).GetHashCode());
+                    }
+                }
+
+                if (_lookup.ContainsKey(hash.ToString()))
+                {
+                    matchresults.Add(imagefile, _lookup[hash.ToString()]);
+                }
+            }
+
+            imgCompTimer.Stop();
+            Console.WriteLine($"Matching took {imgCompTimer.ElapsedMilliseconds}ms");
+
+            return matchresults;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public static void BuildLookup(string imageLocation)
+        {
+            var imagesToCheckAgainst = Directory.GetFiles(imageLocation);
+
+            var imgCompTimer = new Stopwatch();
+            imgCompTimer.Start();
+
+            foreach (var imagefile in imagesToCheckAgainst)
+            {
+
+                var hash = new StringBuilder();
+
+                var image = new Bitmap(imagefile);
+
+                for (var i = 0; i < image.Width; i = i + image.Width / _skip)
+                {
+                    for (var j = 0; j < image.Height; j = j + image.Height / _skip)
+                    {
+                        hash.Append(image.GetPixel(i, j).GetHashCode());
+                    }
+                }
+
+                if (!_lookup.ContainsKey(hash.ToString()))
+                {
+                    _lookup.Add(hash.ToString(), imagefile);
+                }
+                else
+                {
+                    Console.WriteLine($"Possible duplicate image. {imagefile} seems similar to {_lookup[hash.ToString()]}");
+                }
+            }
+
+            imgCompTimer.Stop();
+            Console.WriteLine($"Lookup build took {imgCompTimer.ElapsedMilliseconds}ms");
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         public static void SaveResizedImage1(Bitmap image, int scaleFactor, string newFilename)
         {
 
@@ -306,7 +588,7 @@ namespace ImageProcessing
 
         }
 
-        public static bool FixBaseDir(string dirName)
+        public static bool SetBaseDir(string dirName)
         {
 
             string workingDirectory = Environment.CurrentDirectory;
@@ -329,7 +611,7 @@ namespace ImageProcessing
         {
 
             if (!Directory.Exists(srcDir))
-                FixBaseDir(srcDir);
+                SetBaseDir(srcDir);
 
             if (!Directory.Exists($"{_baseDir}\\{dstDir}"))
                 Directory.CreateDirectory($"{_baseDir}\\{dstDir}");
